@@ -8,7 +8,6 @@ variable region {
 }
 
 # Network variables
-
 variable vpc_subnet {
 	default = "172.16.0.0/16"
 }
@@ -21,6 +20,39 @@ variable client_subnet {
 	default = ""
 }
 
+# Compute variables
+variable server_compute_image_family {
+	default = "nomad"
+}
+variable client_compute_image_family {
+	default = "nomad"
+}
+
+variable server_machine_type {
+	default = "e2-medium"
+}
+
+variable client_machine_type {
+	default = "e2-medium"
+}
+
+variable server_compute_image_project {
+	default = ""
+}
+
+variable client_compute_image_project {
+	default = ""
+}
+
+variable nomad_server_tags {
+	default = []
+}
+
+variable nomad_client_tags {
+	default = []
+}
+
+
 
 # Troubleshooting variables
 
@@ -32,6 +64,6 @@ variable ssh_key_path {
 	default = "~/.ssh/id_rsa.pub"
 }
 
-variable ssh_user {
+variable ssh_username {
 	default = "ubuntu"
 }
