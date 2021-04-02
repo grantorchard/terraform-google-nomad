@@ -20,3 +20,18 @@ variable server_subnet {
 variable client_subnet {
 	default = ""
 }
+
+
+# Troubleshooting variables
+
+variable enable_ssh {
+	default = false
+}
+
+variable ssh_key_path {
+	default = "~/.ssh/id_rsa.pub"
+}
+
+variable ssh_user {
+	default = "ubuntu"
+}
