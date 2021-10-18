@@ -14,6 +14,7 @@ locals {
 	nomad_name = "nomad-${random_string.this.result}"
 	nomad_server_name = "nomad-server-${random_string.this.result}"
 	nomad_client_name = "nomad-client-${random_string.this.result}"
+	nomad_ui_name = "nomad-ui-${random_string.this.result}"
 
 	ssh_key_string = var.ssh_key_path != "" ? "${var.ssh_username}:${file(var.ssh_key_path)}" : null
 }

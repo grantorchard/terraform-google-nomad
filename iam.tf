@@ -31,8 +31,37 @@ resource "google_project_iam_custom_role" "this" {
   title       = "Nomad Compute Tag Read"
   permissions = [
 		"compute.zones.list",
+		"compute.instanceGroups.list",
+		"compute.instanceGroupManagers.list"
 	]
 }
+
+resource "google_service_account_iam_binding" "vault_auth" {
+  service_account_id = google_service_account.nomad_server.name
+  role               = "roles/iam.serviceAccountTokenCreator"
+
+  members = [
+    "serviceAccount:${google_service_account.nomad_server.email}"
+  ]
+}
+
+# resource "google_project_iam_custom_role" "vault_auth" {
+#   role_id     = "vaultAuth"
+#   title       = "Vault Authentication"
+#   permissions = [
+# 		#"compute.instances.get",
+# 		"compute.instanceGroups.list"
+# 	]
+# }
+
+# resource "google_service_account_iam_binding" "vault_instance_permissions" {
+#   service_account_id = google_service_account.nomad_server.name
+#   role               = google_project_iam_custom_role.vault_auth.id
+
+#   members = [
+#     "serviceAccount:${google_service_account.nomad_server.email}"
+#   ]
+# }
 
 resource "google_project_iam_binding" "this" {
   project = var.project

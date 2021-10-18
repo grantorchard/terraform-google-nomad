@@ -8,6 +8,7 @@ data "google_compute_image" "client" {
   project = var.client_compute_image_project != "" ? var.client_compute_image_project : null
 }
 
+
 resource "google_compute_instance_template" "server" {
   name_prefix    = local.nomad_server_name
   machine_type   = var.server_machine_type
@@ -35,29 +36,70 @@ resource "google_compute_instance_template" "server" {
   metadata = {
     ssh-keys = local.ssh_key_string
   }
-  # metadata_startup_script = templatefile("${path.module}/templates/server.hcl.tpl", {
-  #   boundary_version               = var.boundary_version
-  #   ca_name                        = var.tls_disabled == true ? null : google_privateca_certificate_authority.this[0].certificate_authority_id
-	# 	ca_issuer_location             = var.tls_disabled == true ? null : var.ca_issuer_location
-  #   server_api_listener_ip     = google_compute_address.public_server_api.address
-  #   server_cluster_listener_ip = google_compute_address.public_server_cluster.address
-  #   server_api_port            = var.server_api_port
-  #   server_cluster_port        = var.server_cluster_port
-  #   project_id                     = var.project
-  #   public_cluster_address         = google_compute_address.public_server_cluster.address
-  #   db_endpoint                    = google_sql_database_instance.this.private_ip_address
-  #   db_name                        = google_sql_database.this.name
-  #   db_username                    = var.boundary_database_username
-  #   db_password                    = var.boundary_database_password
-  #   tls_disabled                   = var.tls_disabled
-  #   tls_key_path                   = var.tls_disabled == true ? null : var.tls_key_path
-  #   tls_cert_path                  = var.tls_disabled == true ? null : var.tls_cert_path
-  #   kms_key_ring                   = google_kms_key_ring.this.name
-  #   kms_worker_auth_key_id         = google_kms_crypto_key.worker_auth.name
-  #   kms_recovery_key_id            = google_kms_crypto_key.recovery.name
-  #   kms_root_key_id                = google_kms_crypto_key.root.name
-  # })
+  metadata_startup_script = templatefile("${path.module}/templates/startup_script.tpl", {
+		nomad_config = templatefile("${path.module}/templates/nomad.hcl.tpl", {
+			role = "server"
+			datacenter = var.datacenter_name != "" ? var.datacenter_name : var.project
+			project = var.project
+			nomad_data_dir = var.nomad_data_dir
+			nomad_server_tags = join(",", var.nomad_server_tags)
+			vault_addr = var.vault_addr
+			vault_namespace = var.vault_namespace != "" ? var.vault_namespace : null
+			nomad_token_role = var.nomad_token_role
+			envoy_version = var.envoy_version
+		}),
+		vault_config = templatefile("${path.module}/templates/vault.hcl.tpl", {})
+	})
+
   lifecycle {
     create_before_destroy = true
   }
+}
+
+resource "google_compute_region_instance_group_manager" "server" {
+  name = local.nomad_server_name
+
+	named_port {
+		name = var.nomad_ui_port.name
+		port = var.nomad_ui_port.port
+	}
+
+  version {
+    instance_template = google_compute_instance_template.server.id
+    #name              = var.boundary_version
+  }
+
+  base_instance_name = local.nomad_server_name
+}
+
+resource "google_compute_region_autoscaler" "server" {
+  name   = local.nomad_server_name
+  target = google_compute_region_instance_group_manager.server.id
+
+  autoscaling_policy {
+    max_replicas    = 1
+    min_replicas    = 1
+    cooldown_period = 60
+  }
+}
+
+resource "google_compute_firewall" "ssh" {
+  count   = var.enable_ssh == true ? 1 : 0
+  name    = "${local.nomad_name}-ssh-access"
+  network = google_compute_network.this.name
+
+  source_ranges = var.my_public_ips
+
+  allow {
+    protocol = "tcp"
+    ports = [
+      22
+    ]
+  }
+  log_config {
+    metadata = "INCLUDE_ALL_METADATA"
+  }
+  target_tags = concat(var.nomad_server_tags, var.nomad_client_tags)
+
+  direction = "INGRESS"
 }

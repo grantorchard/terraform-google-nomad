@@ -45,14 +45,71 @@ variable client_compute_image_project {
 }
 
 variable nomad_server_tags {
-	default = []
+	default = [
+		"nomad",
+		"server"
+	]
 }
 
 variable nomad_client_tags {
+	default = [
+		"nomad",
+		"client"
+	]
+}
+
+variable nomad_ui_port {
+	default = {
+		name = "nomad-ui"
+		port = 4646
+	}
+	type = object({
+		name = string
+		port = number
+	}
+	)
+}
+
+variable client_source_ranges {
 	default = []
 }
 
+# Nomad application variables
+variable datacenter_name {
+	default = ""
+}
 
+variable nomad_data_dir {
+	default = "/opt/data/nomad"
+}
+
+variable nomad_token_role {
+	default = "nomad"
+}
+
+# Consul application variables
+variable envoy_version {
+	type = string
+	default = "v1.17.0"
+}
+
+variable consul_data_dir {
+	default = "/opt/data/consul"
+}
+
+# Vault application variables
+variable vault_data_dir {
+	default = "/opt/data/vault"
+}
+
+variable vault_addr {
+	type = string
+}
+
+variable vault_namespace {
+	type = string
+	default = ""
+}
 
 # Troubleshooting variables
 
@@ -66,4 +123,8 @@ variable ssh_key_path {
 
 variable ssh_username {
 	default = "ubuntu"
+}
+
+variable my_public_ips {
+	default = []
 }
